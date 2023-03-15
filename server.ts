@@ -28,6 +28,16 @@ app.get("/:shortened", (req, res) => {
   }
 });
 
+app.get("/link/:shortened", (req, res) => {
+  const shortened = req.params.shortened;
+  const link = db.find((link) => link.shortened === shortened);
+  if (link) {
+    res.send(link);
+  } else {
+    res.status(404).send("Not found");
+  }
+});
+
 app.post("/link", (req, res) => {
   const { url } = req.body;
   const shortened: string = crypto.randomUUID().toString().substring(0, 8);
