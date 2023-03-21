@@ -12,14 +12,22 @@ interface Link {
 }
 
 const dbFile = "./db.json";
-const db: Link[] = JSON.parse(Deno.readTextFileSync(dbFile));
+let db: Link[] = JSON.parse(Deno.readTextFileSync(dbFile));
 
+// Stands for update db
+const udb = () => {
+  db = JSON.parse(Deno.readTextFileSync(dbFile));
+};
+
+// @ts-ignore What is the type?
 app.get("/", (req, res) => {
   res.send(db);
 });
 
+// @ts-ignore What is the type?
 app.get("/:shortened", (req, res) => {
   const shortened = req.params.shortened;
+  udb();
   const link = db.find((link) => link.shortened === shortened);
   if (link) {
     res.redirect(link.url);
@@ -28,29 +36,37 @@ app.get("/:shortened", (req, res) => {
   }
 });
 
+// @ts-ignore What is the type?
 app.get("/link/:shortened", (req, res) => {
   const shortened = req.params.shortened;
+  udb();
   const link = db.find((link) => link.shortened === shortened);
   if (link) {
-    res.send(link);
+    res.status(200).send(link.url);
   } else {
     res.status(404).send("Not found");
   }
 });
 
+// @ts-ignore What is the type?
 app.post("/link", (req, res) => {
-  const { url } = req.body;
-  const shortened: string = crypto.randomUUID().toString().substring(0, 8);
+  const { url, length } = req.body;
+  const shortened: string = crypto.randomUUID().toString().replace(/-/g, "")
+    .substring(
+      0,
+      length ? length : 5,
+    );
 
   if (!url) {
     res.status(400).send("Bad request; specifiy url in json body");
     return;
   }
   const link: Link = { url, shortened };
+  udb();
   db.push(link);
   Deno.writeTextFileSync(dbFile, JSON.stringify(db));
 
-  res.status(200).send(link);
+  res.status(200).send(link.shortened);
 });
 
 app.listen(port, () => {
